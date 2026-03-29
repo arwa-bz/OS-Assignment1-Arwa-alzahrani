@@ -32,13 +32,19 @@ class Process implements Runnable {
     private int priority; // Feature 1: Added priority attribute to Process class
     // Constructor to initialize the process with name, burst time, and time quantum
 
+    // Feature 3: Track creation and waiting time
+    private long creationTime;
+    private long waitingTime;
+
     public Process(String name, int burstTime, int timeQuantum) {
         this.name = name;
         this.burstTime = burstTime;
         this.timeQuantum = timeQuantum;
         this.remainingTime = burstTime; // Initially, remaining time is equal to the burst time
         this.priority = 1 + new Random().nextInt(5); // Feature 1: Generate random priority (1-5)
-
+        // Feature 3: Initialize creation time
+        this.creationTime = System.currentTimeMillis();
+        this.waitingTime = 0;
     }
 
     // This method will be called when the thread for this process is started
@@ -75,6 +81,8 @@ class Process implements Runnable {
         }
 
         remainingTime -= runTime; // Deduct the run time from the remaining time
+
+        waitingTime = System.currentTimeMillis() - creationTime; // Feature 3: Update waiting time
         int overallProgress = (int) (((double) (burstTime - remainingTime) / burstTime) * 100);
         String overallProgressBar = createProgressBar(overallProgress, 20);
 
@@ -148,6 +156,11 @@ class Process implements Runnable {
     // Check if the process has finished (i.e., no remaining time)
     public boolean isFinished() {
         return remainingTime <= 0;
+    }
+
+    public long getWaitingTime() { // Feature 3: Getter for waiting time
+
+        return waitingTime;
     }
 }
 
@@ -234,6 +247,7 @@ public class SchedulerSimulation {
             Thread currentThread = processQueue.poll(); // Dequeues the next thread
 
             contextSwitchCount++; // Feature 2: Increment context switch count
+
             // Print the current process queue (list of process IDs in the queue)
             System.out.println(Colors.BOLD + Colors.MAGENTA + "┌─ Ready Queue " + "─".repeat(65) + Colors.RESET);
             System.out.print(Colors.MAGENTA + "│ " + Colors.RESET + Colors.BRIGHT_WHITE + "[" + Colors.RESET);
@@ -297,6 +311,12 @@ public class SchedulerSimulation {
         System.out.println(Colors.BOLD + Colors.CYAN +
                 "Total context switches: " + contextSwitchCount +
                 Colors.RESET); // Feature 2: Display total context switches
+
+        System.out.println("\nProcess Summary:"); // Feature 3: Display waiting time summary
+        System.out.println("Name\tBurst Time\tWaiting Time");
+        for (Process p : processMap.values()) {
+            System.out.println(p.getName() + "\t" + p.getBurstTime() + "\t\t" + p.getWaitingTime() + " ms");
+        }
     }
 
     // Method to add a process to the queue and map, while printing a "ready"
